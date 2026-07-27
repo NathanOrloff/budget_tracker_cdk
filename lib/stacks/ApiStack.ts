@@ -4,11 +4,15 @@ import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as path from 'path';
 import { API_MAIN_GO_CMD, GO_BUILD_COMMAND, PATH_TO_ROOT, SYNC_MAIN_GO_CMD } from '../constants/StackConstants';
 
 interface ApiStackProps extends cdk.StackProps {
   table: dynamodb.Table;
+  userPool: cognito.UserPool;
+  plaidClientSecret: secretsmanager.Secret;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -31,8 +35,23 @@ export class ApiStack extends cdk.Stack {
     const api = new apigateway.RestApi(this, 'Api', {
       restApiName: 'my-api',
     });
+
+    const authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'ApiAuthorizer', {
+      cognitoUserPools: [props.userPool],
+    });
+    const authOptions: apigateway.MethodOptions = {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    };
+
     const transactions = api.root.addResource('transactions');
-    transactions.addMethod('GET', new apigateway.LambdaIntegration(apiFn));
+    transactions.addMethod('GET', new apigateway.LambdaIntegration(apiFn), authOptions);
+
+    const createLinkToken = api.root.addResource('create-link-token');
+    createLinkToken.addMethod('GET', new apigateway.LambdaIntegration(apiFn), authOptions);
+
+    const exchangePublicToken = api.root.addResource('exchange-public-token');
+    exchangePublicToken.addMethod('POST', new apigateway.LambdaIntegration(apiFn), authOptions);
 
     // --- EventBridge Lambda ---
     const syncFn = new lambda.Function(this, 'GoSyncHandler', {
@@ -55,5 +74,10 @@ export class ApiStack extends cdk.Stack {
 
     props.table.grantReadWriteData(apiFn);
     props.table.grantReadWriteData(syncFn);
+
+    props.plaidClientSecret.grantRead(apiFn);
+    props.plaidClientSecret.grantRead(syncFn);
+    apiFn.addEnvironment('PLAID_SECRET_ARN', props.plaidClientSecret.secretArn);
+    syncFn.addEnvironment('PLAID_SECRET_ARN', props.plaidClientSecret.secretArn);
   }
 }

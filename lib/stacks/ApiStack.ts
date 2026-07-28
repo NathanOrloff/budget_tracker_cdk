@@ -7,7 +7,7 @@ import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as path from 'path';
-import { API_MAIN_GO_CMD, GO_BUILD_COMMAND, PATH_TO_ROOT, SYNC_MAIN_GO_CMD } from '../constants/StackConstants';
+import { API_MAIN_GO_CMD, GO_BUILD_COMMAND, PATH_TO_ROOT, PLAID_CLIENT_ID, PLAID_COUNTRY_CODES, PLAID_ENV, PLAID_PRODUCTS, PLAID_REDIRECT_URI, SYNC_MAIN_GO_CMD } from '../constants/StackConstants';
 
 interface ApiStackProps extends cdk.StackProps {
   table: dynamodb.Table;
@@ -77,7 +77,23 @@ export class ApiStack extends cdk.Stack {
 
     props.plaidClientSecret.grantRead(apiFn);
     props.plaidClientSecret.grantRead(syncFn);
-    apiFn.addEnvironment('PLAID_SECRET_ARN', props.plaidClientSecret.secretArn);
-    syncFn.addEnvironment('PLAID_SECRET_ARN', props.plaidClientSecret.secretArn);
+
+    apiFn.addEnvironment('PLAID_SECRET', props.plaidClientSecret.secretArn);
+    apiFn.addEnvironment('PLAID_ENV', PLAID_ENV);
+    apiFn.addEnvironment('PLAID_CLIENT_ID', PLAID_CLIENT_ID);
+    apiFn.addEnvironment('PLAID_REDIRECT_URI', PLAID_REDIRECT_URI);
+    apiFn.addEnvironment('PLAID_COUNTRY_CODES', PLAID_COUNTRY_CODES);
+    apiFn.addEnvironment('PLAID_PRODUCTS', PLAID_PRODUCTS);
+    apiFn.addEnvironment('ENV_REGION', this.region);
+    apiFn.addEnvironment('PLAID_TABLE_NAME', props.table.tableName);
+
+    syncFn.addEnvironment('PLAID_SECRET', props.plaidClientSecret.secretArn);
+    syncFn.addEnvironment('PLAID_ENV', PLAID_ENV);
+    syncFn.addEnvironment('PLAID_CLIENT_ID', PLAID_CLIENT_ID);
+    syncFn.addEnvironment('PLAID_REDIRECT_URI', PLAID_REDIRECT_URI);
+    syncFn.addEnvironment('PLAID_COUNTRY_CODES', PLAID_COUNTRY_CODES);
+    syncFn.addEnvironment('PLAID_PRODUCTS', PLAID_PRODUCTS);
+    syncFn.addEnvironment('ENV_REGION', this.region);
+    syncFn.addEnvironment('PLAID_TABLE_NAME', props.table.tableName);
   }
 }

@@ -13,7 +13,7 @@ export class SecretsStack extends cdk.Stack {
       description: 'Plaid client secret used by the budget tracker API and sync Lambdas',
       generateSecretString: {
         secretStringTemplate: JSON.stringify({}),
-        generateStringKey: 'placeholder',
+        generateStringKey: 'plaid_secret',
       },
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });

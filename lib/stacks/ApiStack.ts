@@ -34,6 +34,11 @@ export class ApiStack extends cdk.Stack {
 
     const api = new apigateway.RestApi(this, 'Api', {
       restApiName: 'my-api',
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: ['GET', 'POST', 'OPTIONS'],
+        allowHeaders: ['Authorization', 'Content-Type'],
+      },
     });
 
     const authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'ApiAuthorizer', {

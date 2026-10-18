@@ -52,6 +52,9 @@ export class ApiStack extends cdk.Stack {
     const transactions = api.root.addResource('transactions');
     transactions.addMethod('GET', new apigateway.LambdaIntegration(apiFn), authOptions);
 
+    const transactionTotals = transactions.addResource('totals-by-month');
+    transactionTotals.addMethod('GET', new apigateway.LambdaIntegration(apiFn), authOptions);
+
     const accountIsRegistered = api.root.addResource('account-is-registered');
     accountIsRegistered.addMethod('GET', new apigateway.LambdaIntegration(apiFn), authOptions);
 
